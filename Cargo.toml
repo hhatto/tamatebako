@@ -1,0 +1,10 @@
+[package]
+name = "tamatebako"
+version = "0.1.0"
+authors = ["Hideo Hattori <hattori@techbureau.jp>"]
+
+[dependencies]
+toml = "0.4"
+structopt = "0.2"
+serde = "1.0"
+serde_derive = "1.0"
