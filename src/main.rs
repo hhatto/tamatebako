@@ -31,7 +31,7 @@ mod config;
 mod database;
 
 lazy_static! {
-    static ref RE_GIT_DIR: Regex = Regex::new(r"^https://(.*).git$").unwrap();
+    static ref RE_GIT_DIR: Regex = Regex::new(r"^(https://|git@)(.*).git$").unwrap();
     static ref RE_GIT_TAG: Regex = Regex::new(r"tag: (.*)(, .*)?").unwrap();
 }
 
@@ -100,7 +100,7 @@ fn main() {
             Some(caps) => format!(
                 "{}/{}",
                 &config.rootdir.to_str().unwrap(),
-                caps.get(1).unwrap().as_str()
+                caps.get(2).unwrap().as_str()
             ),
             None => "".to_string(),
         };
