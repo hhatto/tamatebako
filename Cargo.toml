@@ -4,7 +4,16 @@ version = "0.1.0"
 authors = ["Hideo Hattori <hattori@techbureau.jp>"]
 
 [dependencies]
+dirs = "1.0.3"
 toml = "0.4"
 structopt = "0.2"
 serde = "1.0"
 serde_derive = "1.0"
+git2 = "0.7"
+regex = "1"
+lazy_static = "1.1.0"
+log = "0.4.0"
+env_logger = "0.5.13"
+diesel = { version = "1.3.0", features = ["sqlite", "chrono"] }
+chrono = "0.4"
+csv = "1"
