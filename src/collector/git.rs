@@ -1,16 +1,16 @@
+use chrono::NaiveDateTime;
+use csv;
+use git2;
+use git2::build::RepoBuilder;
+use git2::{Cred, FetchOptions, RemoteCallbacks, Repository};
+use regex::Regex;
 use std::env;
+use std::io::prelude::*;
+use std::io::BufReader;
 use std::path::Path;
 use std::process::{Command, Stdio};
-use std::io::BufReader;
-use std::io::prelude::*;
-use chrono::NaiveDateTime;
-use regex::Regex;
-use git2;
-use git2::{Cred, Repository, RemoteCallbacks, FetchOptions};
-use git2::build::RepoBuilder;
-use csv;
 
-use ::database;
+use database;
 
 lazy_static! {
     static ref RE_GIT_DIR: Regex = Regex::new(r"^(https://|git@)(.*).git$").unwrap();
@@ -35,7 +35,11 @@ pub struct GitCollector {
     ssh_key: Option<String>,
 }
 
-fn git_clone(url: &str, directory: &str, ssh_key: &Option<String>) -> Result<Repository, git2::Error> {
+fn git_clone(
+    url: &str,
+    directory: &str,
+    ssh_key: &Option<String>,
+) -> Result<Repository, git2::Error> {
     match ssh_key {
         Some(key) => {
             let mut builder = RepoBuilder::new();
@@ -45,35 +49,37 @@ fn git_clone(url: &str, directory: &str, ssh_key: &Option<String>) -> Result<Rep
             callbacks.credentials(|_, _, _| {
                 let pubkey_path = format!("{}.pub", key);
                 let privatekey_path = format!("{}", key);
-                let credentials = Cred::ssh_key("git",
-                                                Some(Path::new(&pubkey_path)),
-                                                Path::new(privatekey_path.as_str()),
-                                                None).expect("fail crate credentials");
+                let credentials = Cred::ssh_key(
+                    "git",
+                    Some(Path::new(&pubkey_path)),
+                    Path::new(privatekey_path.as_str()),
+                    None,
+                ).expect("fail crate credentials");
                 Ok(credentials)
             });
             fetch_options.remote_callbacks(callbacks);
             builder.fetch_options(fetch_options);
             builder.clone(url, Path::new(directory))
-        },
-        None => {
-            Repository::clone(url, directory)
         }
+        None => Repository::clone(url, directory),
     }
 }
 
 impl GitCollector {
-    pub fn new(db_url: &str,
-               rootdir: &str,
-               project_name: &str,
-               url: &str,
-               branch: &str,
-               version_regex: &Option<String>,
-               ssh_key: Option<String>) -> Self {
+    pub fn new(
+        db_url: &str,
+        rootdir: &str,
+        project_name: &str,
+        url: &str,
+        branch: &str,
+        version_regex: &Option<String>,
+        ssh_key: Option<String>,
+    ) -> Self {
         let git_directory = match RE_GIT_DIR.captures(url) {
             Some(caps) => {
                 let directory = caps.get(2).unwrap();
                 format!("{}/{}", rootdir, directory.as_str().replace(":", "/"))
-            },
+            }
             None => "".to_string(),
         };
         let re_version = match version_regex {
@@ -148,14 +154,14 @@ impl GitCollector {
             .spawn()
             .expect("fail git log command");
 
-            match git_proc.wait() {
-                Ok(out) => {
-                    if !out.success() {
-                        panic!("fail git command");
-                    }
-                },
-                Err(e) => panic!("fail git command. {:?}", e),
+        match git_proc.wait() {
+            Ok(out) => {
+                if !out.success() {
+                    panic!("fail git command");
+                }
             }
+            Err(e) => panic!("fail git command. {:?}", e),
+        }
 
         let mut s = String::new();
         if let Some(ref mut stdout) = git_proc.stdout {
@@ -168,8 +174,8 @@ impl GitCollector {
                             s.push_str(l.as_str());
                             s.push_str("\n");
                         }
-                    },
-                    None => {},
+                    }
+                    None => {}
                 }
             }
         }
@@ -181,7 +187,7 @@ impl GitCollector {
             .from_reader(reader);
         for row in rdr.deserialize() {
             match row {
-                Ok(_) => {},
+                Ok(_) => {}
                 Err(e) => {
                     error!("fail deserialize csv data. error: {:?}", e);
                     continue;
@@ -190,13 +196,9 @@ impl GitCollector {
             let mut record: GitInfo = row.unwrap();
             record.tag = {
                 match &self.version_regex {
-                    Some(vregex) => {
-                        match vregex.captures(&record.tag) {
-                            Some(caps) => {
-                                caps.get(1).unwrap().as_str().to_string()
-                            },
-                            None => "".to_string(),
-                        }
+                    Some(vregex) => match vregex.captures(&record.tag) {
+                        Some(caps) => caps.get(1).unwrap().as_str().to_string(),
+                        None => "".to_string(),
                     },
                     None => record.tag,
                 }

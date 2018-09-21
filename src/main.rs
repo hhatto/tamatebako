@@ -21,9 +21,9 @@ use std::path::PathBuf;
 use std::{env, fs};
 use structopt::StructOpt;
 
+mod collector;
 mod config;
 mod database;
-mod collector;
 
 #[derive(Debug, StructOpt)]
 #[structopt(
@@ -46,7 +46,10 @@ fn main() {
     env_logger::init();
 
     let opts = CommandOption::from_args();
-    let config_filepath = opts.config_file.to_str().expect("fail to get config filename");
+    let config_filepath = opts
+        .config_file
+        .to_str()
+        .expect("fail to get config filename");
     let config = config::load_config(config_filepath);
     let config = config.unwrap();
     debug!("config: {:?}", config);
@@ -77,13 +80,15 @@ fn main() {
         let source = project.source.clone().unwrap();
         debug!("config.project: {:?}", source.git);
 
-        let mut git_collector = collector::git::GitCollector::new(&db_url,
-                                                                  &config.rootdir.to_str().unwrap(),
-                                                                  &project_name,
-                                                                  &source.git,
-                                                                  &source.branch,
-                                                                  &project.version_regex,
-                                                                  config.git_ssh_key.clone());
+        let mut git_collector = collector::git::GitCollector::new(
+            &db_url,
+            &config.rootdir.to_str().unwrap(),
+            &project_name,
+            &source.git,
+            &source.branch,
+            &project.version_regex,
+            config.git_ssh_key.clone(),
+        );
         git_collector.init();
 
         // get version info
