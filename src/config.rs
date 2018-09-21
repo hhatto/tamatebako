@@ -6,9 +6,22 @@ use std::io::Read;
 use std::path::PathBuf;
 use toml;
 
-#[derive(Clone, Debug)]
+fn default_rootdir() -> PathBuf {
+    PathBuf::from(format!(
+        "{}/.tamatebako",
+        dirs::home_dir()
+            .expect("fail get homedir")
+            .to_str()
+            .unwrap()
+    ))
+}
+
+#[derive(Clone, Debug, Deserialize)]
 pub struct Config {
+    #[serde(default = "default_rootdir")]
     pub rootdir: PathBuf,
+    pub git_ssh_key: Option<String>,
+    #[serde(rename = "project")]
     pub projects: HashMap<String, ProjectConfig>,
 }
 
@@ -23,6 +36,7 @@ impl Config {
     pub fn new() -> Config {
         Self {
             rootdir: PathBuf::from(""),
+            git_ssh_key: Some("".to_string()),
             projects: HashMap::new(),
         }
     }
@@ -40,20 +54,10 @@ pub struct ProjectSourceConfig {
 
 pub fn load_config(path: &str) -> io::Result<Config> {
     let mut config_toml = String::new();
-    let mut config = Config::new();
     let mut file = File::open(path)?;
     file.read_to_string(&mut config_toml)?;
 
-    let projects: HashMap<String, ProjectConfig> =
-        toml::from_str(config_toml.as_str()).expect("parse toml error");
+    let config: Config = toml::from_str(config_toml.as_str()).expect("parse toml error");
 
-    config.projects = projects;
-    config.rootdir = PathBuf::from(format!(
-        "{}/.tamatebako",
-        dirs::home_dir()
-            .expect("fail get homedir")
-            .to_str()
-            .unwrap()
-    ));
     Ok(config)
 }
