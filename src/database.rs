@@ -87,16 +87,16 @@ pub fn have_version_history(
 
 pub fn insert_version_history(
     conn: &SqliteConnection,
-    input: VersionHistory,
+    input: &VersionHistory,
 ) -> QueryResult<usize> {
     use self::schema::version_history::dsl::*;
 
     insert_or_ignore_into(version_history)
         .values((
-            project_name.eq(input.project_name),
-            channel.eq(input.channel),
-            version.eq(input.version),
-            bump_date.eq(input.bump_date),
-            url.eq(input.url),
+            project_name.eq(input.project_name.clone()),
+            channel.eq(input.channel.clone()),
+            version.eq(input.version.clone()),
+            bump_date.eq(input.bump_date.clone()),
+            url.eq(input.url.clone()),
         )).execute(conn)
 }

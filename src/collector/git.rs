@@ -220,8 +220,12 @@ impl GitCollector {
                 url: Some(format!("{}/releases/tag/{}", self.url, record.tag)),
             };
 
-            match database::insert_version_history(&dbconn, version_history) {
-                Ok(n) => debug!("insert {} data", n),
+            match database::insert_version_history(&dbconn, &version_history) {
+                Ok(n) => {
+                    if n != 0 {
+                        info!("insert data. {:?}", version_history);
+                    }
+                },
                 Err(e) => error!("insert error: {:?}", e),
             }
         }
