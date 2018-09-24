@@ -60,6 +60,8 @@ fn git_clone(
             });
             fetch_options.remote_callbacks(callbacks);
             builder.fetch_options(fetch_options);
+
+            info!("git clone {}", url);
             builder.clone(url, Path::new(directory))
         }
         None => Repository::clone(url, directory),
