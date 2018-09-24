@@ -1,6 +1,10 @@
 git_ssh_key = "/YOUR/SSH/SECRETKEY"
 
-[project.geth_stable]
+[project.tamatebako]
 url = "https://github.com/hhatto/tamatebako"
 source = { git = "https://github.com/hhatto/tamatebako.git", branch = "master" }
 version_regex = "tag: (v[0-9]+.[0-9]+.[0-9]+(-[a-z][a-z][0-9]+)?)"
+
+[project.bitcoin]
+url = "https://github.com/bitcoin/bitcoin"
+source = { github = "bitcoin/bitcoin" }

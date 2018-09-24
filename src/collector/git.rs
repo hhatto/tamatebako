@@ -27,6 +27,7 @@ struct GitInfo {
 #[derive(Debug, Default)]
 pub struct GitCollector {
     db_url: String,
+    clone_url: String,
     url: String,
     project_name: String,
     branch: String,
@@ -69,13 +70,14 @@ impl GitCollector {
     pub fn new(
         db_url: &str,
         rootdir: &str,
+        clone_url: &str,
         project_name: &str,
         url: &str,
         branch: &str,
         version_regex: &Option<String>,
         ssh_key: Option<String>,
     ) -> Self {
-        let git_directory = match RE_GIT_DIR.captures(url) {
+        let git_directory = match RE_GIT_DIR.captures(clone_url) {
             Some(caps) => {
                 let directory = caps.get(2).unwrap();
                 format!("{}/{}", rootdir, directory.as_str().replace(":", "/"))
@@ -89,6 +91,7 @@ impl GitCollector {
 
         Self {
             db_url: db_url.to_string(),
+            clone_url: clone_url.to_string(),
             url: url.to_string(),
             project_name: project_name.to_string(),
             branch: branch.to_string(),
@@ -110,8 +113,7 @@ impl GitCollector {
         let _repo = match Repository::open(&self.directory) {
             Ok(repo) => repo,
             Err(_) => {
-                // clone
-                match git_clone(&self.url, &self.directory, &self.ssh_key) {
+                match git_clone(&self.clone_url, &self.directory, &self.ssh_key) {
                     Ok(repo) => repo,
                     Err(e) => panic!("fail git clone. error: {:?}", e),
                 }

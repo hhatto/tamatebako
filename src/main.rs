@@ -3,7 +3,9 @@
 #[macro_use]
 extern crate log;
 extern crate chrono;
+extern crate reqwest;
 extern crate csv;
+extern crate url;
 extern crate env_logger;
 #[macro_use]
 extern crate diesel;
@@ -12,6 +14,7 @@ extern crate lazy_static;
 extern crate structopt;
 #[macro_use]
 extern crate serde_derive;
+extern crate serde_json;
 extern crate dirs;
 extern crate git2;
 extern crate regex;
@@ -76,22 +79,47 @@ fn main() {
             Some(_) => {}
         }
 
-        // NOTE: only git repo, now.
         let source = project.source.clone().unwrap();
+
         debug!("config.project: {:?}", source.git);
+        match source.git {
+            Some(git) => {
+                let branch = match source.branch {
+                    Some(b) => b,
+                    None => "master".to_string(),
+                };
+                let mut git_collector = collector::git::GitCollector::new(
+                    &db_url,
+                    &config.rootdir.to_str().unwrap(),
+                    &git,
+                    &project_name,
+                    &project.url,
+                    &branch,
+                    &project.version_regex,
+                    config.git_ssh_key.clone(),
+                );
+                git_collector.init();
 
-        let mut git_collector = collector::git::GitCollector::new(
-            &db_url,
-            &config.rootdir.to_str().unwrap(),
-            &project_name,
-            &source.git,
-            &source.branch,
-            &project.version_regex,
-            config.git_ssh_key.clone(),
-        );
-        git_collector.init();
+                // get version info
+                git_collector.collect();
+            },
+            None => {},
+        }
 
-        // get version info
-        git_collector.collect();
+        debug!("config.project: {:?}", source.github);
+        match source.github {
+            Some(github_repo) => {
+                let tmp: Vec<&str> = github_repo.split("/").collect();
+                let owner = tmp[0];
+                let repo = tmp[1];
+                let github_collector = collector::github::GitHubCollector::new(
+                    &db_url,
+                    &project_name,
+                    owner,
+                    repo);
+                let _ = github_collector.get_releases();
+            },
+            None => {},
+        }
     }
 }

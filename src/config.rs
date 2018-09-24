@@ -48,8 +48,9 @@ impl Config {
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct ProjectSourceConfig {
-    pub git: String,
-    pub branch: String,
+    pub git: Option<String>,
+    pub branch: Option<String>,
+    pub github: Option<String>,
 }
 
 pub fn load_config(path: &str) -> io::Result<Config> {
