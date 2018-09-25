@@ -19,6 +19,8 @@ extern crate git2;
 extern crate regex;
 extern crate serde_json;
 extern crate toml;
+extern crate actix;
+extern crate actix_web;
 
 use std::path::PathBuf;
 use std::{env, fs};
@@ -27,6 +29,7 @@ use structopt::StructOpt;
 mod collector;
 mod config;
 mod database;
+mod web;
 
 #[derive(Debug, StructOpt)]
 #[structopt(name = "tamatebako", about = "version checker for OSS Projects")]
@@ -90,7 +93,9 @@ fn main() {
     database::create_table(&dbconn);
 
     match opts.cmd {
-        Command::WebCommand => {},
+        Command::WebCommand => {
+            web::serve();
+        },
         Command::CheckCommand => {
             for (project_name, project) in &config.projects {
                 debug!("config.project: {:?}", project);

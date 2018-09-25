@@ -92,3 +92,14 @@ pub fn insert_version_history(conn: &SqliteConnection, input: &VersionHistory) -
             url.eq(input.url.clone()),
         )).execute(conn)
 }
+
+pub fn get_version_history(conn: &SqliteConnection) -> Vec<VersionHistory> {
+    use self::schema::version_history::dsl::*;
+
+    //version_history
+    //    .select(())
+    //    .get_result(conn)
+    version_history
+        .order(bump_date.desc())
+        .load::<VersionHistory>(conn).unwrap()
+}
