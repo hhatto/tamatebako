@@ -116,7 +116,9 @@ fn main() {
                     &db_url,
                     &project_name,
                     owner,
-                    repo);
+                    repo,
+                    config.github_access_token.clone(),
+                );
                 let _ = github_collector.get_releases();
             },
             None => {},
