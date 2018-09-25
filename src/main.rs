@@ -35,10 +35,30 @@ struct CommandOption {
     log_level: String,
     #[structopt(short = "c", long = "config", help = "config file", parse(from_os_str))]
     config_file: PathBuf,
+    #[structopt(subcommand)]
+    cmd: Command,
 }
+
+#[derive(Debug, StructOpt)]
+enum Command {
+    /// check and store version history information
+    #[structopt(name = "check")]
+    CheckCommand,
+
+    /// serve version history visualize web application
+    #[structopt(name = "web")]
+    WebCommand,
+}
+
+#[derive(Debug, StructOpt)]
+struct CheckCommand {}
+
+#[derive(Debug, StructOpt)]
+struct WebCommand {}
 
 fn main() {
     let opts = CommandOption::from_args();
+    println!("{:?}", opts);
     match opts.log_level.as_str() {
         "debug" | "info" | "warn" | "error" => {},
         _ => {
@@ -69,57 +89,62 @@ fn main() {
     let dbconn = database::get_database_connection(db_url.as_str());
     database::create_table(&dbconn);
 
-    for (project_name, project) in &config.projects {
-        debug!("config.project: {:?}", project);
+    match opts.cmd {
+        Command::WebCommand => {},
+        Command::CheckCommand => {
+            for (project_name, project) in &config.projects {
+                debug!("config.project: {:?}", project);
 
-        match project.source {
-            None => continue,
-            Some(_) => {}
-        }
+                match project.source {
+                    None => continue,
+                    Some(_) => {}
+                }
 
-        let source = project.source.clone().unwrap();
+                let source = project.source.clone().unwrap();
 
-        debug!("config.project: {:?}", source.git);
-        match source.git {
-            Some(git) => {
-                let branch = match source.branch {
-                    Some(b) => b,
-                    None => "master".to_string(),
-                };
-                let mut git_collector = collector::git::GitCollector::new(
-                    &db_url,
-                    &config.rootdir.to_str().unwrap(),
-                    &git,
-                    &project_name,
-                    &project.url,
-                    &branch,
-                    &project.version_regex,
-                    config.git_ssh_key.clone(),
-                );
-                git_collector.init();
+                debug!("config.project: {:?}", source.git);
+                match source.git {
+                    Some(git) => {
+                        let branch = match source.branch {
+                            Some(b) => b,
+                            None => "master".to_string(),
+                        };
+                        let mut git_collector = collector::git::GitCollector::new(
+                            &db_url,
+                            &config.rootdir.to_str().unwrap(),
+                            &git,
+                            &project_name,
+                            &project.url,
+                            &branch,
+                            &project.version_regex,
+                            config.git_ssh_key.clone(),
+                        );
+                        git_collector.init();
 
-                // get version info
-                git_collector.collect();
+                        // get version info
+                        git_collector.collect();
+                    }
+                    None => {}
+                }
+
+                debug!("config.project: {:?}", source.github);
+                match source.github {
+                    Some(github_repo) => {
+                        let tmp: Vec<&str> = github_repo.split("/").collect();
+                        let owner = tmp[0];
+                        let repo = tmp[1];
+                        let github_collector = collector::github::GitHubCollector::new(
+                            &db_url,
+                            &project_name,
+                            owner,
+                            repo,
+                            config.github_access_token.clone(),
+                        );
+                        let _ = github_collector.get_releases();
+                    }
+                    None => {}
+                }
             }
-            None => {}
-        }
-
-        debug!("config.project: {:?}", source.github);
-        match source.github {
-            Some(github_repo) => {
-                let tmp: Vec<&str> = github_repo.split("/").collect();
-                let owner = tmp[0];
-                let repo = tmp[1];
-                let github_collector = collector::github::GitHubCollector::new(
-                    &db_url,
-                    &project_name,
-                    owner,
-                    repo,
-                    config.github_access_token.clone(),
-                );
-                let _ = github_collector.get_releases();
-            }
-            None => {}
-        }
+        },
     }
 }
