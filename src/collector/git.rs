@@ -36,11 +36,7 @@ pub struct GitCollector {
     ssh_key: Option<String>,
 }
 
-fn git_clone(
-    url: &str,
-    directory: &str,
-    ssh_key: &Option<String>,
-) -> Result<Repository, git2::Error> {
+fn git_clone(url: &str, directory: &str, ssh_key: &Option<String>) -> Result<Repository, git2::Error> {
     match ssh_key {
         Some(key) => {
             let mut builder = RepoBuilder::new();
@@ -114,12 +110,10 @@ impl GitCollector {
 
         let _repo = match Repository::open(&self.directory) {
             Ok(repo) => repo,
-            Err(_) => {
-                match git_clone(&self.clone_url, &self.directory, &self.ssh_key) {
-                    Ok(repo) => repo,
-                    Err(e) => panic!("fail git clone. error: {:?}", e),
-                }
-            }
+            Err(_) => match git_clone(&self.clone_url, &self.directory, &self.ssh_key) {
+                Ok(repo) => repo,
+                Err(e) => panic!("fail git clone. error: {:?}", e),
+            },
         };
 
         if !env::set_current_dir(&self.directory).is_ok() {
@@ -228,8 +222,7 @@ impl GitCollector {
             }
 
             let bump_date =
-                NaiveDateTime::parse_from_str(record.date.as_str(), "%Y/%m/%d %H:%M:%S")
-                    .expect("fail parse date");
+                NaiveDateTime::parse_from_str(record.date.as_str(), "%Y/%m/%d %H:%M:%S").expect("fail parse date");
             let version_history = database::VersionHistory {
                 id: 0,
                 project_name: self.project_name.clone(),
@@ -244,7 +237,7 @@ impl GitCollector {
                     if n != 0 {
                         info!("insert data. {:?}", version_history);
                     }
-                },
+                }
                 Err(e) => error!("insert error: {:?}", e),
             }
         }

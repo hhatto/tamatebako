@@ -9,10 +9,7 @@ use toml;
 fn default_rootdir() -> PathBuf {
     PathBuf::from(format!(
         "{}/.tamatebako",
-        dirs::home_dir()
-            .expect("fail get homedir")
-            .to_str()
-            .unwrap()
+        dirs::home_dir().expect("fail get homedir").to_str().unwrap()
     ))
 }
 
@@ -21,6 +18,7 @@ pub struct Config {
     #[serde(default = "default_rootdir")]
     pub rootdir: PathBuf,
     pub git_ssh_key: Option<String>,
+    pub github_access_token: Option<String>,
     #[serde(rename = "project")]
     pub projects: HashMap<String, ProjectConfig>,
 }
@@ -33,14 +31,6 @@ pub struct ProjectConfig {
 }
 
 impl Config {
-    pub fn new() -> Config {
-        Self {
-            rootdir: PathBuf::from(""),
-            git_ssh_key: Some("".to_string()),
-            projects: HashMap::new(),
-        }
-    }
-
     pub fn get_database_url(&self) -> String {
         format!("{}/tamatebako.sqlite", self.rootdir.to_str().unwrap())
     }
