@@ -9,10 +9,7 @@ use toml;
 fn default_rootdir() -> PathBuf {
     PathBuf::from(format!(
         "{}/.tamatebako",
-        dirs::home_dir()
-            .expect("fail get homedir")
-            .to_str()
-            .unwrap()
+        dirs::home_dir().expect("fail get homedir").to_str().unwrap()
     ))
 }
 

@@ -58,12 +58,7 @@ UNIQUE (project_name, channel, version)
 }
 
 #[allow(dead_code)]
-pub fn have_version_history(
-    conn: &SqliteConnection,
-    i_name: &str,
-    i_channel: &str,
-    i_version: &str,
-) -> bool {
+pub fn have_version_history(conn: &SqliteConnection, i_name: &str, i_channel: &str, i_version: &str) -> bool {
     use self::schema::version_history::dsl::*;
 
     match version_history
@@ -85,10 +80,7 @@ pub fn have_version_history(
     }
 }
 
-pub fn insert_version_history(
-    conn: &SqliteConnection,
-    input: &VersionHistory,
-) -> QueryResult<usize> {
+pub fn insert_version_history(conn: &SqliteConnection, input: &VersionHistory) -> QueryResult<usize> {
     use self::schema::version_history::dsl::*;
 
     insert_or_ignore_into(version_history)

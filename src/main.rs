@@ -3,10 +3,10 @@
 #[macro_use]
 extern crate log;
 extern crate chrono;
-extern crate reqwest;
 extern crate csv;
-extern crate url;
 extern crate env_logger;
+extern crate reqwest;
+extern crate url;
 #[macro_use]
 extern crate diesel;
 #[macro_use]
@@ -14,10 +14,10 @@ extern crate lazy_static;
 extern crate structopt;
 #[macro_use]
 extern crate serde_derive;
-extern crate serde_json;
 extern crate dirs;
 extern crate git2;
 extern crate regex;
+extern crate serde_json;
 extern crate toml;
 
 use std::path::PathBuf;
@@ -29,19 +29,11 @@ mod config;
 mod database;
 
 #[derive(Debug, StructOpt)]
-#[structopt(
-    name = "tamatebako",
-    about = "version checker for OSS Projects"
-)]
+#[structopt(name = "tamatebako", about = "version checker for OSS Projects")]
 struct CommandOption {
     #[structopt(long = "verbose", help = "verbose output")]
     verbose: bool,
-    #[structopt(
-        short = "c",
-        long = "config",
-        help = "config file",
-        parse(from_os_str)
-    )]
+    #[structopt(short = "c", long = "config", help = "config file", parse(from_os_str))]
     config_file: PathBuf,
 }
 
@@ -49,10 +41,7 @@ fn main() {
     env_logger::init();
 
     let opts = CommandOption::from_args();
-    let config_filepath = opts
-        .config_file
-        .to_str()
-        .expect("fail to get config filename");
+    let config_filepath = opts.config_file.to_str().expect("fail to get config filename");
     let config = config::load_config(config_filepath);
     let config = config.unwrap();
     debug!("config: {:?}", config);
@@ -102,8 +91,8 @@ fn main() {
 
                 // get version info
                 git_collector.collect();
-            },
-            None => {},
+            }
+            None => {}
         }
 
         debug!("config.project: {:?}", source.github);
@@ -120,8 +109,8 @@ fn main() {
                     config.github_access_token.clone(),
                 );
                 let _ = github_collector.get_releases();
-            },
-            None => {},
+            }
+            None => {}
         }
     }
 }

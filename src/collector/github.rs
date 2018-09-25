@@ -1,8 +1,8 @@
 use chrono::NaiveDateTime;
 use reqwest;
 use reqwest::Client;
-use url::Url;
 use serde_json;
+use url::Url;
 
 use database;
 
@@ -31,9 +31,7 @@ impl GitHubCollector {
 
     fn insert(&self, tag: &str, date: &str, release_url: &str) {
         let dbconn = database::get_database_connection(self.db_url.as_str());
-        let bump_date =
-            NaiveDateTime::parse_from_str(date, "%Y-%m-%dT%H:%M:%SZ")
-                .expect("fail parse date");
+        let bump_date = NaiveDateTime::parse_from_str(date, "%Y-%m-%dT%H:%M:%SZ").expect("fail parse date");
         let version_history = database::VersionHistory {
             id: 0,
             project_name: self.project_name.clone(),
@@ -48,7 +46,7 @@ impl GitHubCollector {
                 if n != 0 {
                     info!("insert data. {:?}", version_history);
                 }
-            },
+            }
             Err(e) => error!("insert error: {:?}", e),
         }
     }
@@ -62,7 +60,7 @@ impl GitHubCollector {
                 let t = format!("access_token={}", token);
                 get_url.set_query(Some(t.as_str()));
                 self.client.get(get_url).send()?.json()?
-            },
+            }
             None => self.client.get(get_url).send()?.json()?,
         };
 
