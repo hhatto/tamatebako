@@ -126,14 +126,29 @@ impl GitCollector {
             return;
         }
 
+        // TODO: use git2-rs
+
         // set branch
         let git_branch = &self.branch;
-        info!("repo: {}, branch: {}", self.url, git_branch);
+        debug!("repo: {}, branch: {}", self.url, git_branch);
         let _proc = Command::new("git")
             .arg("checkout")
             .arg(format!("{}", git_branch))
             .output()
             .expect("fail git checkout command");
+
+        // fetch --prune
+        let _proc = Command::new("git")
+            .arg("fetch")
+            .arg("--prune")
+            .output()
+            .expect("fail git fetch --prune command");
+
+        // pull
+        let _proc = Command::new("git")
+            .arg("pull")
+            .output()
+            .expect("fail git pull command");
 
         if !env::set_current_dir(&old_curdir).is_ok() {
             return;
