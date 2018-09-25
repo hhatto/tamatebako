@@ -31,16 +31,25 @@ mod database;
 #[derive(Debug, StructOpt)]
 #[structopt(name = "tamatebako", about = "version checker for OSS Projects")]
 struct CommandOption {
-    #[structopt(long = "verbose", help = "verbose output")]
-    verbose: bool,
+    #[structopt(long = "log-level", help = "logging level", default_value = "info")]
+    log_level: String,
     #[structopt(short = "c", long = "config", help = "config file", parse(from_os_str))]
     config_file: PathBuf,
 }
 
 fn main() {
-    env_logger::init();
-
     let opts = CommandOption::from_args();
+    match opts.log_level.as_str() {
+        "debug" | "info" | "warn" | "error" => {},
+        _ => {
+            println!("invalid log-level");
+            return;
+        },
+    }
+    let env = env_logger::Env::default()
+        .filter_or(env_logger::DEFAULT_FILTER_ENV, opts.log_level);
+    env_logger::Builder::from_env(env).init();
+
     let config_filepath = opts.config_file.to_str().expect("fail to get config filename");
     let config = config::load_config(config_filepath);
     let config = config.unwrap();
