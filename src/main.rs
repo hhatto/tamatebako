@@ -61,7 +61,6 @@ struct WebCommand {}
 
 fn main() {
     let opts = CommandOption::from_args();
-    println!("{:?}", opts);
     match opts.log_level.as_str() {
         "debug" | "info" | "warn" | "error" => {},
         _ => {
