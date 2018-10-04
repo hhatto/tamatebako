@@ -48,6 +48,10 @@ enum Command {
     #[structopt(name = "check")]
     CheckCommand,
 
+    /// output the latest version of each projects
+    #[structopt(name = "list")]
+    ListCommand,
+
     /// serve version history visualize web application
     #[structopt(name = "web")]
     WebCommand,
@@ -55,6 +59,9 @@ enum Command {
 
 #[derive(Debug, StructOpt)]
 struct CheckCommand {}
+
+#[derive(Debug, StructOpt)]
+struct ListCommand {}
 
 #[derive(Debug, StructOpt)]
 struct WebCommand {}
@@ -94,6 +101,19 @@ fn main() {
     match opts.cmd {
         Command::WebCommand => {
             web::serve();
+        },
+        Command::ListCommand => {
+            let version_histories = database::get_latest_version_history(&dbconn);
+            let mut name_max_len = 0;
+            for version_history in &version_histories {
+                if name_max_len < version_history.project_name.len() {
+                    name_max_len = version_history.project_name.len();
+                }
+            }
+            for version_history in &version_histories {
+                println!("{name:>width$}: {version}",
+                         name=version_history.project_name, width=name_max_len, version=version_history.version);
+            }
         },
         Command::CheckCommand => {
             for (project_name, project) in &config.projects {
