@@ -96,10 +96,21 @@ pub fn insert_version_history(conn: &SqliteConnection, input: &VersionHistory) -
 pub fn get_latest_version_history(conn: &SqliteConnection) -> Vec<VersionHistory> {
     use self::schema::version_history::dsl::*;
 
-    version_history
+    let version_histories = version_history
         .group_by(project_name)
-        .order(bump_date.desc())
-        .load::<VersionHistory>(conn).unwrap()
+        .order(project_name)
+        .load::<VersionHistory>(conn).unwrap();
+    let mut ret: Vec<VersionHistory> = vec![];
+    for v in &version_histories {
+        ret.push(
+            version_history
+                .filter(project_name.eq(v.project_name.to_string()))
+                .order(bump_date.desc())
+                .limit(1)
+                .first::<VersionHistory>(conn).unwrap()
+        );
+    }
+    ret
 }
 
 pub fn get_version_history(conn: &SqliteConnection) -> Vec<VersionHistory> {
