@@ -13,6 +13,13 @@ fn default_rootdir() -> PathBuf {
     ))
 }
 
+pub fn default_config_path() -> PathBuf {
+    PathBuf::from(format!(
+        "{}/.tamatebako/config.toml",
+        dirs::home_dir().expect("fail get homedir").to_str().unwrap()
+    ))
+}
+
 #[derive(Clone, Debug, Deserialize)]
 pub struct Config {
     #[serde(default = "default_rootdir")]

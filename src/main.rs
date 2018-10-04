@@ -37,7 +37,7 @@ struct CommandOption {
     #[structopt(long = "log-level", help = "logging level", default_value = "info")]
     log_level: String,
     #[structopt(short = "c", long = "config", help = "config file", parse(from_os_str))]
-    config_file: PathBuf,
+    config_file: Option<PathBuf>,
     #[structopt(subcommand)]
     cmd: Command,
 }
@@ -79,8 +79,18 @@ fn main() {
         .filter_or(env_logger::DEFAULT_FILTER_ENV, opts.log_level);
     env_logger::Builder::from_env(env).init();
 
-    let config_filepath = opts.config_file.to_str().expect("fail to get config filename");
-    let config = config::load_config(config_filepath);
+    let default_config_path = config::default_config_path();
+    let config_filepath = if default_config_path.exists() {
+        default_config_path.as_path().to_str().expect("fail to get default config filename").to_string()
+    } else {
+        match opts.config_file {
+            Some(c) => c.to_str().expect("fail to get config filename").to_string(),
+            None => {
+                panic!("config file is not exists");
+            },
+        }
+    };
+    let config = config::load_config(config_filepath.as_str());
     let config = config.unwrap();
     debug!("config: {:?}", config);
 
