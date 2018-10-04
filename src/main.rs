@@ -125,10 +125,11 @@ fn main() {
             }
             for version_history in &version_histories {
                 println!(
-                    "{name:>width$}: {version}",
+                    "{name:>width$}: {version:<10} ({date})",
                     name = version_history.project_name,
                     width = name_max_len,
-                    version = version_history.version
+                    version = version_history.version,
+                    date = version_history.bump_date
                 );
             }
         }
