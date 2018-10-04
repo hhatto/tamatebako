@@ -12,10 +12,11 @@ pub fn serve() {
     let addr = "127.0.0.1:9999";
     let _s = server::new(|| {
         App::new()
-        .middleware(middleware::Logger::default())
-        .resource("/", |r| r.f(index))
+            .middleware(middleware::Logger::default())
+            .resource("/", |r| r.f(index))
     })
-    .bind(addr).expect("fail bind")
+    .bind(addr)
+    .expect("fail bind")
     .shutdown_timeout(0)
     .start();
 

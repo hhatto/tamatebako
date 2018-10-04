@@ -90,7 +90,8 @@ pub fn insert_version_history(conn: &SqliteConnection, input: &VersionHistory) -
             version.eq(input.version.clone()),
             bump_date.eq(input.bump_date.clone()),
             url.eq(input.url.clone()),
-        )).execute(conn)
+        ))
+        .execute(conn)
 }
 
 pub fn get_latest_version_history(conn: &SqliteConnection) -> Vec<VersionHistory> {
@@ -99,7 +100,8 @@ pub fn get_latest_version_history(conn: &SqliteConnection) -> Vec<VersionHistory
     let version_histories = version_history
         .group_by(project_name)
         .order(project_name)
-        .load::<VersionHistory>(conn).unwrap();
+        .load::<VersionHistory>(conn)
+        .unwrap();
     let mut ret: Vec<VersionHistory> = vec![];
     for v in &version_histories {
         ret.push(
@@ -107,7 +109,8 @@ pub fn get_latest_version_history(conn: &SqliteConnection) -> Vec<VersionHistory
                 .filter(project_name.eq(v.project_name.to_string()))
                 .order(bump_date.desc())
                 .limit(1)
-                .first::<VersionHistory>(conn).unwrap()
+                .first::<VersionHistory>(conn)
+                .unwrap(),
         );
     }
     ret
@@ -121,5 +124,6 @@ pub fn get_version_history(conn: &SqliteConnection) -> Vec<VersionHistory> {
     //    .get_result(conn)
     version_history
         .order(bump_date.desc())
-        .load::<VersionHistory>(conn).unwrap()
+        .load::<VersionHistory>(conn)
+        .unwrap()
 }

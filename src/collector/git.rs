@@ -51,7 +51,8 @@ fn git_clone(url: &str, directory: &str, ssh_key: &Option<String>) -> Result<Rep
                     Some(Path::new(&pubkey_path)),
                     Path::new(privatekey_path.as_str()),
                     None,
-                ).expect("fail crate credentials");
+                )
+                .expect("fail crate credentials");
                 Ok(credentials)
             });
             fetch_options.remote_callbacks(callbacks);
@@ -139,10 +140,7 @@ impl GitCollector {
             .expect("fail git fetch --prune command");
 
         // pull
-        let _proc = Command::new("git")
-            .arg("pull")
-            .output()
-            .expect("fail git pull command");
+        let _proc = Command::new("git").arg("pull").output().expect("fail git pull command");
 
         if !env::set_current_dir(&old_curdir).is_ok() {
             return;

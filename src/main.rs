@@ -14,13 +14,13 @@ extern crate lazy_static;
 extern crate structopt;
 #[macro_use]
 extern crate serde_derive;
+extern crate actix;
+extern crate actix_web;
 extern crate dirs;
 extern crate git2;
 extern crate regex;
 extern crate serde_json;
 extern crate toml;
-extern crate actix;
-extern crate actix_web;
 
 use std::path::PathBuf;
 use std::{env, fs};
@@ -69,25 +69,28 @@ struct WebCommand {}
 fn main() {
     let opts = CommandOption::from_args();
     match opts.log_level.as_str() {
-        "debug" | "info" | "warn" | "error" => {},
+        "debug" | "info" | "warn" | "error" => {}
         _ => {
             println!("invalid log-level");
             return;
-        },
+        }
     }
-    let env = env_logger::Env::default()
-        .filter_or(env_logger::DEFAULT_FILTER_ENV, opts.log_level);
+    let env = env_logger::Env::default().filter_or(env_logger::DEFAULT_FILTER_ENV, opts.log_level);
     env_logger::Builder::from_env(env).init();
 
     let default_config_path = config::default_config_path();
     let config_filepath = if default_config_path.exists() {
-        default_config_path.as_path().to_str().expect("fail to get default config filename").to_string()
+        default_config_path
+            .as_path()
+            .to_str()
+            .expect("fail to get default config filename")
+            .to_string()
     } else {
         match opts.config_file {
             Some(c) => c.to_str().expect("fail to get config filename").to_string(),
             None => {
                 panic!("config file is not exists");
-            },
+            }
         }
     };
     let config = config::load_config(config_filepath.as_str());
@@ -111,7 +114,7 @@ fn main() {
     match opts.cmd {
         Command::WebCommand => {
             web::serve();
-        },
+        }
         Command::ListCommand => {
             let version_histories = database::get_latest_version_history(&dbconn);
             let mut name_max_len = 0;
@@ -121,10 +124,14 @@ fn main() {
                 }
             }
             for version_history in &version_histories {
-                println!("{name:>width$}: {version}",
-                         name=version_history.project_name, width=name_max_len, version=version_history.version);
+                println!(
+                    "{name:>width$}: {version}",
+                    name = version_history.project_name,
+                    width = name_max_len,
+                    version = version_history.version
+                );
             }
-        },
+        }
         Command::CheckCommand => {
             for (project_name, project) in &config.projects {
                 debug!("config.project: {:?}", project);
@@ -179,6 +186,6 @@ fn main() {
                     None => {}
                 }
             }
-        },
+        }
     }
 }
