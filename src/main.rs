@@ -11,6 +11,8 @@ extern crate url;
 extern crate diesel;
 #[macro_use]
 extern crate lazy_static;
+#[macro_use]
+extern crate clap;
 extern crate structopt;
 #[macro_use]
 extern crate serde_derive;
@@ -46,25 +48,33 @@ struct CommandOption {
 enum Command {
     /// check and store version history information
     #[structopt(name = "check")]
-    CheckCommand,
+    CheckCommand {},
 
     /// output the latest version of each projects
     #[structopt(name = "list")]
-    ListCommand,
+    ListCommand {
+        #[structopt(short = "s", long = "sort", help = "sort key",
+                    raw(possible_values = "&ListCommandSortKey::variants()", case_insensitive = "true"))]
+        sort_key: Option<ListCommandSortKey>,
+        #[structopt(short = "r", long = "reverse",
+                    help = "reverse the order of the sort item")]
+        reverse: bool,
+
+    },
 
     /// serve version history visualize web application
     #[structopt(name = "web")]
-    WebCommand,
+    WebCommand {},
 }
 
-#[derive(Debug, StructOpt)]
-struct CheckCommand {}
-
-#[derive(Debug, StructOpt)]
-struct ListCommand {}
-
-#[derive(Debug, StructOpt)]
-struct WebCommand {}
+arg_enum! {
+    #[derive(Debug)]
+    enum ListCommandSortKey {
+        Name,
+        Version,
+        DateTime,
+    }
+}
 
 fn main() {
     let opts = CommandOption::from_args();
@@ -93,8 +103,7 @@ fn main() {
             }
         }
     };
-    let config = config::load_config(config_filepath.as_str());
-    let config = config.unwrap();
+    let config = config::load_config(config_filepath.as_str()).expect("fail to load config");
     debug!("config: {:?}", config);
 
     if !config.rootdir.exists() {
@@ -111,12 +120,18 @@ fn main() {
     let dbconn = database::get_database_connection(db_url.as_str());
     database::create_table(&dbconn);
 
-    match opts.cmd {
-        Command::WebCommand => {
+    match Command::from_args() {
+        Command::WebCommand{} => {
             web::serve();
         }
-        Command::ListCommand => {
-            let version_histories = database::get_latest_version_history(&dbconn);
+        Command::ListCommand { sort_key, reverse } => {
+            let order_by = match sort_key {
+                Some(ListCommandSortKey::Name) => "project_name",
+                Some(ListCommandSortKey::Version) => "version",
+                Some(ListCommandSortKey::DateTime) => "bump_date",
+                _ => "project_name",
+            };
+            let version_histories = database::get_latest_version_history(&dbconn, Some(order_by.to_string()), reverse);
             let mut name_max_len = 0;
             for version_history in &version_histories {
                 if name_max_len < version_history.project_name.len() {
@@ -133,7 +148,7 @@ fn main() {
                 );
             }
         }
-        Command::CheckCommand => {
+        Command::CheckCommand{} => {
             for (project_name, project) in &config.projects {
                 debug!("config.project: {:?}", project);
 

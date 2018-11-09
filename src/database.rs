@@ -94,14 +94,42 @@ pub fn insert_version_history(conn: &SqliteConnection, input: &VersionHistory) -
         .execute(conn)
 }
 
-pub fn get_latest_version_history(conn: &SqliteConnection) -> Vec<VersionHistory> {
+pub fn get_latest_version_history(conn: &SqliteConnection, order_by: Option<String>, is_order_by_desc: bool) -> Vec<VersionHistory> {
     use self::schema::version_history::dsl::*;
 
-    let version_histories = version_history
-        .group_by(project_name)
-        .order(project_name)
-        .load::<VersionHistory>(conn)
-        .unwrap();
+    let mut query = version_history.into_boxed();
+    query = query.group_by(project_name);
+    // TODO: not elegant code...
+    query = match order_by {
+        Some(v) => {
+            if v == "version" {
+                if is_order_by_desc {
+                    query.order(version.desc())
+                } else {
+                    query.order(version.asc())
+                }
+            } else if v == "bump_date" {
+                if is_order_by_desc {
+                    query.order(bump_date.desc())
+                } else {
+                    query.order(bump_date.asc())
+                }
+            } else {
+                if is_order_by_desc {
+                    query.order(project_name.desc())
+                } else {
+                    query.order(project_name.asc())
+                }
+            }
+        }
+        None => if is_order_by_desc {
+            query.order(project_name.desc())
+        } else {
+            query.order(project_name.asc())
+        }
+    };
+    let version_histories = query.load::<VersionHistory>(conn).unwrap();
+
     let mut ret: Vec<VersionHistory> = vec![];
     for v in &version_histories {
         ret.push(
