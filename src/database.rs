@@ -17,7 +17,7 @@ mod schema {
 
 use self::schema::version_history;
 
-#[derive(Deserialize, Insertable)]
+#[derive(Deserialize, Insertable, QueryableByName)]
 #[table_name = "version_history"]
 pub struct VersionHistoryForm {
     project_name: String,
@@ -96,50 +96,41 @@ pub fn insert_version_history(conn: &SqliteConnection, input: &VersionHistory) -
 
 pub fn get_latest_version_history(conn: &SqliteConnection, order_by: Option<String>, is_order_by_desc: bool) -> Vec<VersionHistory> {
     use self::schema::version_history::dsl::*;
+    use diesel::dsl::sql;
+    use diesel::sql_types::{Integer, Nullable, Text, Timestamp};
 
-    let mut query = version_history.into_boxed();
-    query = query.group_by(project_name);
-    // TODO: not elegant code...
-    query = match order_by {
-        Some(v) => {
-            if v == "version" {
-                if is_order_by_desc {
-                    query.order(version.desc())
-                } else {
-                    query.order(version.asc())
-                }
-            } else if v == "bump_date" {
-                if is_order_by_desc {
-                    query.order(bump_date.desc())
-                } else {
-                    query.order(bump_date.asc())
-                }
-            } else {
-                if is_order_by_desc {
-                    query.order(project_name.desc())
-                } else {
-                    query.order(project_name.asc())
-                }
-            }
-        }
-        None => if is_order_by_desc {
-            query.order(project_name.desc())
-        } else {
-            query.order(project_name.asc())
-        }
+    let order_by_str = if is_order_by_desc {
+        "DESC"
+    } else {
+        "ASC"
     };
-    let version_histories = query.load::<VersionHistory>(conn).unwrap();
+
+    let order_by_key = match order_by {
+        Some(v) => v,
+        None => "project_name".to_string(),
+    };
+
+    let version_histories = sql::<(Integer, Text, Text, Text, Timestamp, Nullable<Text>)>(
+        format!("SELECT * FROM version_history AS vh
+  WHERE NOT EXISTS (
+    SELECT 1 FROM version_history AS vh2
+      WHERE vh.project_name = vh2.project_name AND vh.bump_date < vh2.bump_date
+  )
+  ORDER BY vh.{} {};", order_by_key, order_by_str).as_str())
+        .load::<VersionHistory>(conn);
 
     let mut ret: Vec<VersionHistory> = vec![];
-    for v in &version_histories {
-        ret.push(
-            version_history
-                .filter(project_name.eq(v.project_name.to_string()))
-                .order(bump_date.desc())
-                .limit(1)
-                .first::<VersionHistory>(conn)
-                .unwrap(),
-        );
+    for vv in version_histories.iter() {
+        for v in vv {
+            ret.push(
+                version_history
+                    .filter(project_name.eq(v.project_name.to_string()))
+                    .order(bump_date.desc())
+                    .limit(1)
+                    .first::<VersionHistory>(conn)
+                    .unwrap(),
+            );
+        }
     }
     ret
 }
