@@ -25,7 +25,7 @@ impl GitHubCollector {
             client: Client::new(),
             owner: owner.to_string(),
             repo_name: repo_name.to_string(),
-            access_token: access_token,
+            access_token,
         }
     }
 
@@ -37,7 +37,7 @@ impl GitHubCollector {
             project_name: self.project_name.clone(),
             channel: "".to_string(),
             version: tag.to_string(),
-            bump_date: bump_date,
+            bump_date,
             url: Some(release_url.to_string()),
         };
 

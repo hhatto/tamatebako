@@ -35,14 +35,14 @@ struct CommandOption {
 enum Command {
     /// check and store version history information
     #[structopt(name = "check")]
-    CheckCommand {},
+    Check {},
 
     /// output the latest version of each projects
     #[structopt(name = "list")]
-    ListCommand {
+    List {
         #[structopt(short = "s", long = "sort", help = "sort key",
-                    possible_values = &ListCommandSortKey::variants(), case_insensitive = true)]
-        sort_key: Option<ListCommandSortKey>,
+                    possible_values = &ListSortKey::variants(), case_insensitive = true)]
+        sort_key: Option<ListSortKey>,
         #[structopt(short = "r", long = "reverse",
                     help = "reverse the order of the sort item")]
         reverse: bool,
@@ -51,12 +51,12 @@ enum Command {
 
     /// serve version history visualize web application
     #[structopt(name = "web")]
-    WebCommand {},
+    Web {},
 }
 
 arg_enum! {
     #[derive(Debug)]
-    enum ListCommandSortKey {
+    enum ListSortKey {
         Name,
         Version,
         DateTime,
@@ -93,13 +93,11 @@ fn main() {
     let config = config::load_config(config_filepath.as_str()).expect("fail to load config");
     debug!("config: {:?}", config);
 
-    if !config.rootdir.exists() {
-        if !fs::create_dir(&config.rootdir).is_ok() {
-            return;
-        }
+    if !config.rootdir.exists() && fs::create_dir(&config.rootdir).is_err() {
+        return;
     }
 
-    if !env::set_current_dir(&config.rootdir).is_ok() {
+    if env::set_current_dir(&config.rootdir).is_err() {
         return;
     }
 
@@ -108,14 +106,14 @@ fn main() {
     database::create_table(&dbconn);
 
     match Command::from_args() {
-        Command::WebCommand{} => {
+        Command::Web{} => {
             web::serve();
         }
-        Command::ListCommand { sort_key, reverse } => {
+        Command::List { sort_key, reverse } => {
             let order_by = match sort_key {
-                Some(ListCommandSortKey::Name) => "project_name",
-                Some(ListCommandSortKey::Version) => "version",
-                Some(ListCommandSortKey::DateTime) => "bump_date",
+                Some(ListSortKey::Name) => "project_name",
+                Some(ListSortKey::Version) => "version",
+                Some(ListSortKey::DateTime) => "bump_date",
                 _ => "project_name",
             };
             let version_histories = database::get_latest_version_history(&dbconn, Some(order_by.to_string()), reverse);
@@ -135,7 +133,7 @@ fn main() {
                 );
             }
         }
-        Command::CheckCommand{} => {
+        Command::Check{} => {
             for (project_name, project) in &config.projects {
                 debug!("config.project: {:?}", project);
 
@@ -147,46 +145,40 @@ fn main() {
                 let source = project.source.clone().unwrap();
 
                 debug!("config.project: {:?}", source.git);
-                match source.git {
-                    Some(git) => {
-                        let branch = match source.branch {
-                            Some(b) => b,
-                            None => "master".to_string(),
-                        };
-                        let mut git_collector = collector::git::GitCollector::new(
-                            &db_url,
-                            &config.rootdir.to_str().unwrap(),
-                            &git,
-                            &project_name,
-                            &project.url,
-                            &branch,
-                            &project.version_regex,
-                            config.git_ssh_key.clone(),
-                        );
-                        git_collector.init();
+                if let Some(git) = source.git {
+                    let branch = match source.branch {
+                        Some(b) => b,
+                        None => "master".to_string(),
+                    };
+                    let mut git_collector = collector::git::GitCollector::new(
+                        &db_url,
+                        &config.rootdir.to_str().unwrap(),
+                        &git,
+                        &project_name,
+                        &project.url,
+                        &branch,
+                        &project.version_regex,
+                        config.git_ssh_key.clone(),
+                    );
+                    git_collector.init();
 
-                        // get version info
-                        git_collector.collect();
-                    }
-                    None => {}
+                    // get version info
+                    git_collector.collect();
                 }
 
                 debug!("config.project: {:?}", source.github);
-                match source.github {
-                    Some(github_repo) => {
-                        let tmp: Vec<&str> = github_repo.split("/").collect();
-                        let owner = tmp[0];
-                        let repo = tmp[1];
-                        let github_collector = collector::github::GitHubCollector::new(
-                            &db_url,
-                            &project_name,
-                            owner,
-                            repo,
-                            config.github_access_token.clone(),
-                        );
-                        let _ = github_collector.get_releases();
-                    }
-                    None => {}
+                if let Some(github_repo) = source.github {
+                    let tmp: Vec<&str> = github_repo.split('/').collect();
+                    let owner = tmp[0];
+                    let repo = tmp[1];
+                    let github_collector = collector::github::GitHubCollector::new(
+                        &db_url,
+                        &project_name,
+                        owner,
+                        repo,
+                        config.github_access_token.clone(),
+                    );
+                    let _ = github_collector.get_releases();
                 }
             }
         }

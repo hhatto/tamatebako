@@ -69,13 +69,7 @@ pub fn have_version_history(conn: &SqliteConnection, i_name: &str, i_channel: &s
         .count()
         .get_result::<i64>(conn)
     {
-        Ok(n) => {
-            if n > 0 {
-                true
-            } else {
-                false
-            }
-        }
+        Ok(n) => n > 0,
         Err(_) => false,
     }
 }

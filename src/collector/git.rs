@@ -45,7 +45,7 @@ fn git_clone(url: &str, directory: &str, ssh_key: &Option<String>) -> Result<Rep
 
             callbacks.credentials(|_, _, _| {
                 let pubkey_path = format!("{}.pub", key);
-                let privatekey_path = format!("{}", key);
+                let privatekey_path = key.to_string();
                 let credentials = Cred::ssh_key(
                     "git",
                     Some(Path::new(&pubkey_path)),
@@ -96,7 +96,7 @@ impl GitCollector {
             branch: branch.to_string(),
             directory: git_directory,
             version_regex: re_version,
-            ssh_key: ssh_key,
+            ssh_key,
         }
     }
 
@@ -117,7 +117,7 @@ impl GitCollector {
             },
         };
 
-        if !env::set_current_dir(&self.directory).is_ok() {
+        if env::set_current_dir(&self.directory).is_err() {
             return;
         }
 
@@ -128,7 +128,7 @@ impl GitCollector {
         debug!("repo: {}, branch: {}", self.url, git_branch);
         let _proc = Command::new("git")
             .arg("checkout")
-            .arg(format!("{}", git_branch))
+            .arg(git_branch.to_string())
             .output()
             .expect("fail git checkout command");
 
@@ -142,7 +142,7 @@ impl GitCollector {
         // pull
         let _proc = Command::new("git").arg("pull").output().expect("fail git pull command");
 
-        if !env::set_current_dir(&old_curdir).is_ok() {
+        if env::set_current_dir(&old_curdir).is_err() {
             return;
         }
     }
@@ -150,7 +150,7 @@ impl GitCollector {
     pub fn collect(self) {
         let old_curdir = env::current_dir().unwrap();
 
-        if !env::set_current_dir(&self.directory).is_ok() {
+        if env::set_current_dir(&self.directory).is_err() {
             return;
         }
         let dbconn = database::get_database_connection(self.db_url.as_str());
@@ -226,7 +226,7 @@ impl GitCollector {
                 project_name: self.project_name.clone(),
                 channel: self.branch.clone(),
                 version: record.tag.clone(),
-                bump_date: bump_date,
+                bump_date,
                 url: Some(format!("{}/releases/tag/{}", self.url, record.tag)),
             };
 
@@ -240,7 +240,7 @@ impl GitCollector {
             }
         }
 
-        if !env::set_current_dir(&old_curdir).is_ok() {
+        if env::set_current_dir(&old_curdir).is_err() {
             return;
         }
     }
