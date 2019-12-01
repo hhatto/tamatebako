@@ -2,27 +2,14 @@
 
 #[macro_use]
 extern crate log;
-extern crate chrono;
-extern crate csv;
-extern crate env_logger;
-extern crate reqwest;
-extern crate url;
 #[macro_use]
 extern crate diesel;
 #[macro_use]
 extern crate lazy_static;
 #[macro_use]
 extern crate clap;
-extern crate structopt;
 #[macro_use]
 extern crate serde_derive;
-extern crate actix;
-extern crate actix_web;
-extern crate dirs;
-extern crate git2;
-extern crate regex;
-extern crate serde_json;
-extern crate toml;
 
 use std::path::PathBuf;
 use std::{env, fs};
@@ -54,7 +41,7 @@ enum Command {
     #[structopt(name = "list")]
     ListCommand {
         #[structopt(short = "s", long = "sort", help = "sort key",
-                    raw(possible_values = "&ListCommandSortKey::variants()", case_insensitive = "true"))]
+                    possible_values = &ListCommandSortKey::variants(), case_insensitive = true)]
         sort_key: Option<ListCommandSortKey>,
         #[structopt(short = "r", long = "reverse",
                     help = "reverse the order of the sort item")]

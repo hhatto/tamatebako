@@ -4,7 +4,7 @@ use reqwest::Client;
 use serde_json;
 use url::Url;
 
-use database;
+use crate::database;
 
 const GITHUB_API: &str = "https://api.github.com";
 
@@ -59,9 +59,9 @@ impl GitHubCollector {
             Some(token) => {
                 let t = format!("access_token={}", token);
                 get_url.set_query(Some(t.as_str()));
-                self.client.get(get_url).send()?.json()?
+                self.client.get(get_url.as_str()).send()?.json()?
             }
-            None => self.client.get(get_url).send()?.json()?,
+            None => self.client.get(get_url.as_str()).send()?.json()?,
         };
 
         for release in res.iter() {

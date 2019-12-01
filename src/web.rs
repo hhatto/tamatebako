@@ -1,19 +1,18 @@
-use actix;
-use actix_web::{middleware, server, App, HttpRequest};
+use actix_web::{web, HttpServer, App, HttpResponse, Responder};
+use actix_web::middleware::Logger;
 
-use database;
-
-fn index(_req: &HttpRequest) -> &'static str {
-    "Hello world!"
+fn index() -> impl Responder {
+    HttpResponse::Ok().body("Hello world!")
 }
 
 pub fn serve() {
-    let sys = actix::System::new("tamatebako-web");
     let addr = "127.0.0.1:9999";
-    let _s = server::new(|| {
+    let _s = HttpServer::new(|| {
         App::new()
-            .middleware(middleware::Logger::default())
-            .resource("/", |r| r.f(index))
+            .wrap(Logger::default())
+            .service(
+                web::resource("/").to(index)
+            )
     })
     .bind(addr)
     .expect("fail bind")
@@ -21,5 +20,4 @@ pub fn serve() {
     .start();
 
     info!("listen to {}", addr);
-    let _ = sys.run();
 }

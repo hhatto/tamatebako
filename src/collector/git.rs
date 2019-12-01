@@ -10,7 +10,7 @@ use std::io::BufReader;
 use std::path::Path;
 use std::process::{Command, Stdio};
 
-use database;
+use crate::database;
 
 lazy_static! {
     static ref RE_GIT_DIR: Regex = Regex::new(r"^(https://|git@)(.*).git$").unwrap();
@@ -191,7 +191,7 @@ impl GitCollector {
             }
         }
 
-        let reader = BufReader::new(s.trim_right().as_bytes());
+        let reader = BufReader::new(s.trim_end().as_bytes());
         let mut rdr = csv::ReaderBuilder::new()
             .delimiter(b'\t')
             .has_headers(false)
