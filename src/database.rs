@@ -88,16 +88,16 @@ pub fn insert_version_history(conn: &SqliteConnection, input: &VersionHistory) -
         .execute(conn)
 }
 
-pub fn get_latest_version_history(conn: &SqliteConnection, order_by: Option<String>, is_order_by_desc: bool) -> Vec<VersionHistory> {
+pub fn get_latest_version_history(
+    conn: &SqliteConnection,
+    order_by: Option<String>,
+    is_order_by_desc: bool,
+) -> Vec<VersionHistory> {
     use self::schema::version_history::dsl::*;
     use diesel::dsl::sql;
     use diesel::sql_types::{Integer, Nullable, Text, Timestamp};
 
-    let order_by_str = if is_order_by_desc {
-        "DESC"
-    } else {
-        "ASC"
-    };
+    let order_by_str = if is_order_by_desc { "DESC" } else { "ASC" };
 
     let order_by_key = match order_by {
         Some(v) => v,
@@ -105,13 +105,18 @@ pub fn get_latest_version_history(conn: &SqliteConnection, order_by: Option<Stri
     };
 
     let version_histories = sql::<(Integer, Text, Text, Text, Timestamp, Nullable<Text>)>(
-        format!("SELECT * FROM version_history AS vh
+        format!(
+            "SELECT * FROM version_history AS vh
   WHERE NOT EXISTS (
     SELECT 1 FROM version_history AS vh2
       WHERE vh.project_name = vh2.project_name AND vh.bump_date < vh2.bump_date
   )
-  ORDER BY vh.{} {};", order_by_key, order_by_str).as_str())
-        .load::<VersionHistory>(conn);
+  ORDER BY vh.{} {};",
+            order_by_key, order_by_str
+        )
+        .as_str(),
+    )
+    .load::<VersionHistory>(conn);
 
     let mut ret: Vec<VersionHistory> = vec![];
     for vv in version_histories.iter() {

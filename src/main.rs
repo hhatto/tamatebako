@@ -43,10 +43,8 @@ enum Command {
         #[structopt(short = "s", long = "sort", help = "sort key",
                     possible_values = &ListSortKey::variants(), case_insensitive = true)]
         sort_key: Option<ListSortKey>,
-        #[structopt(short = "r", long = "reverse",
-                    help = "reverse the order of the sort item")]
+        #[structopt(short = "r", long = "reverse", help = "reverse the order of the sort item")]
         reverse: bool,
-
     },
 
     /// serve version history visualize web application
@@ -106,7 +104,7 @@ fn main() {
     database::create_table(&dbconn);
 
     match Command::from_args() {
-        Command::Web{} => {
+        Command::Web {} => {
             web::serve();
         }
         Command::List { sort_key, reverse } => {
@@ -133,7 +131,7 @@ fn main() {
                 );
             }
         }
-        Command::Check{} => {
+        Command::Check {} => {
             for (project_name, project) in &config.projects {
                 debug!("config.project: {:?}", project);
 
