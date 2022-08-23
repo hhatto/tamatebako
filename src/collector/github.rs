@@ -51,7 +51,7 @@ impl GitHubCollector {
         }
     }
 
-    pub fn get_releases(self) -> Result<(), reqwest::Error> {
+    pub async fn get_releases(self) -> Result<(), reqwest::Error> {
         let url = Url::parse(GITHUB_API).unwrap();
         let url_path = format!("repos/{}/{}/releases", self.owner, self.repo_name);
         let mut get_url = url.join(url_path.as_str()).unwrap();
@@ -59,9 +59,9 @@ impl GitHubCollector {
             Some(token) => {
                 let t = format!("access_token={}", token);
                 get_url.set_query(Some(t.as_str()));
-                self.client.get(get_url.as_str()).send()?.json()?
+                self.client.get(get_url.as_str()).send().await?.json().await?
             }
-            None => self.client.get(get_url.as_str()).send()?.json()?,
+            None => self.client.get(get_url.as_str()).send().await?.json().await?,
         };
 
         for release in res.iter() {
