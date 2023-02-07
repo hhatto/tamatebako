@@ -106,7 +106,7 @@ fn main() {
     let dbconn = database::get_database_connection(db_url.as_str());
     database::create_table(&dbconn);
 
-    match Command::from_args() {
+    match opts.cmd {
         Command::Web {} => {
             web::serve();
         }
