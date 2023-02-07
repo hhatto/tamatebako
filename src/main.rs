@@ -84,7 +84,10 @@ fn main() {
         match opts.config_file {
             Some(c) => c.to_str().expect("fail to get config filename").to_string(),
             None => {
-                panic!("config file is not exists");
+                error!("not exists default config file: {:?}", default_config_path);
+                error!("config file is not exists");
+                error!("execute with -config option or set config file to default path");
+                return;
             }
         }
     };
