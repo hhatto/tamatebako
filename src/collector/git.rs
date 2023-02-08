@@ -147,11 +147,11 @@ impl GitCollector {
         }
     }
 
-    pub fn collect(self) {
+    pub fn collect(self) -> usize {
         let old_curdir = env::current_dir().unwrap();
 
         if env::set_current_dir(&self.directory).is_err() {
-            return;
+            return 0;
         }
         let dbconn = database::get_database_connection(self.db_url.as_str());
 
@@ -190,6 +190,8 @@ impl GitCollector {
                 }
             }
         }
+
+        let mut found_new_version_num = 0;
 
         let reader = BufReader::new(s.trim_end().as_bytes());
         let mut rdr = csv::ReaderBuilder::new()
@@ -234,6 +236,7 @@ impl GitCollector {
                 Ok(n) => {
                     if n != 0 {
                         info!("insert data. {:?}", version_history);
+                        found_new_version_num += 0;
                     }
                 }
                 Err(e) => error!("insert error: {:?}", e),
@@ -241,7 +244,9 @@ impl GitCollector {
         }
 
         if env::set_current_dir(&old_curdir).is_err() {
-            return;
+            error!("change dir error");
         }
+
+        return found_new_version_num;
     }
 }

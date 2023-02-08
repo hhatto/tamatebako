@@ -1,12 +1,18 @@
 use chrono::NaiveDateTime;
 use reqwest;
 use reqwest::Client;
-use serde_json;
 use url::Url;
 
 use crate::database;
 
 const GITHUB_API: &str = "https://api.github.com";
+
+#[derive(Debug, Serialize, Deserialize)]
+struct GitHubRelease {
+    html_url: String,
+    tag_name: String,
+    created_at: String,
+}
 
 pub struct GitHubCollector {
     db_url: String,
@@ -29,7 +35,7 @@ impl GitHubCollector {
         }
     }
 
-    fn insert(&self, tag: &str, date: &str, release_url: &str) {
+    fn insert(&self, tag: &str, date: &str, release_url: &str) -> usize {
         let dbconn = database::get_database_connection(self.db_url.as_str());
         let bump_date = NaiveDateTime::parse_from_str(date, "%Y-%m-%dT%H:%M:%SZ").expect("fail parse date");
         let version_history = database::VersionHistory {
@@ -46,32 +52,48 @@ impl GitHubCollector {
                 if n != 0 {
                     info!("insert data. {:?}", version_history);
                 }
+                return n;
             }
-            Err(e) => error!("insert error: {:?}", e),
+            Err(e) => {
+                error!("insert error: {:?}", e);
+                return 0;
+            },
         }
     }
 
-    pub async fn get_releases(self) -> Result<(), reqwest::Error> {
+    pub async fn get_releases(self) -> Result<usize, reqwest::Error> {
+        debug!("get_releases");
         let url = Url::parse(GITHUB_API).unwrap();
         let url_path = format!("repos/{}/{}/releases", self.owner, self.repo_name);
         let mut get_url = url.join(url_path.as_str()).unwrap();
-        let res: Vec<serde_json::Value> = match &self.access_token {
+        let res: Vec<GitHubRelease> = match &self.access_token {
             Some(token) => {
                 let t = format!("access_token={}", token);
                 get_url.set_query(Some(t.as_str()));
-                self.client.get(get_url.as_str()).send().await?.json().await?
+                self.client
+                    .get(get_url.as_str())
+                    .header("user-agent", "tamatebako-client")
+                    .send().await?.json().await?
             }
-            None => self.client.get(get_url.as_str()).send().await?.json().await?,
+            None => {
+                self.client
+                    .get(get_url.as_str())
+                    .header("user-agent", "tamatebako-client")
+                    .send().await?.json().await?
+            }
         };
 
+        debug!("github.release: {:#?}", res);
+        let mut all_insert_num = 0;
         for release in res.iter() {
-            let rel = release.as_object().unwrap();
-            let release_url = rel["html_url"].as_str().unwrap();
-            let tag_name = rel["tag_name"].as_str().unwrap();
-            let bump_date = rel["created_at"].as_str().unwrap();
+            let release_url = release.html_url.as_str();
+            let tag_name = release.tag_name.as_str();
+            let bump_date = release.created_at.as_str();
 
-            self.insert(tag_name, bump_date, release_url)
+            let insert_num = self.insert(tag_name, bump_date, release_url);
+            all_insert_num += insert_num;
+
         }
-        Ok(())
+        Ok(all_insert_num)
     }
 }

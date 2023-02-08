@@ -61,13 +61,14 @@ arg_enum! {
     }
 }
 
-fn main() {
+#[tokio::main]
+async fn main() -> Result<(), reqwest::Error> {
     let opts = CommandOption::from_args();
     match opts.log_level.as_str() {
         "debug" | "info" | "warn" | "error" => {}
         _ => {
             println!("invalid log-level");
-            return;
+            return Ok(());
         }
     }
     let env = env_logger::Env::default().filter_or(env_logger::DEFAULT_FILTER_ENV, opts.log_level);
@@ -87,7 +88,7 @@ fn main() {
                 error!("not exists default config file: {:?}", default_config_path);
                 error!("config file is not exists");
                 error!("execute with -config option or set config file to default path");
-                return;
+                return Ok(());
             }
         }
     };
@@ -95,11 +96,11 @@ fn main() {
     debug!("config: {:?}", config);
 
     if !config.rootdir.exists() && fs::create_dir(&config.rootdir).is_err() {
-        return;
+        return Ok(());
     }
 
     if env::set_current_dir(&config.rootdir).is_err() {
-        return;
+        return Ok(());
     }
 
     let db_url = config.get_database_url();
@@ -143,9 +144,10 @@ fn main() {
                     Some(_) => {}
                 }
 
+                let mut new_release_versions = 0;
                 let source = project.source.clone().unwrap();
 
-                debug!("config.project: {:?}", source.git);
+                debug!("config.source.git: {:?}", source.git);
                 if let Some(git) = source.git {
                     let branch = match source.branch {
                         Some(b) => b,
@@ -164,10 +166,10 @@ fn main() {
                     git_collector.init();
 
                     // get version info
-                    git_collector.collect();
+                    new_release_versions = git_collector.collect();
                 }
 
-                debug!("config.project: {:?}", source.github);
+                debug!("config.source.github: {:?}", source.github);
                 if let Some(github_repo) = source.github {
                     let tmp: Vec<&str> = github_repo.split('/').collect();
                     let owner = tmp[0];
@@ -179,9 +181,19 @@ fn main() {
                         repo,
                         config.github_access_token.clone(),
                     );
-                    let _ = github_collector.get_releases();
+                    match github_collector.get_releases().await {
+                        Ok(n) => {
+                            new_release_versions = n
+                        }
+                        Err(e) => error!("github collector error: {:#?}", e)
+                    }
+                }
+
+                if new_release_versions == 0 {
+                    info!("not exist new version(s): {}", project_name);
                 }
             }
         }
     }
+    Ok(())
 }
