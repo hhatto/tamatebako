@@ -42,8 +42,7 @@ pub fn get_database_connection(url: &str) -> SqliteConnection {
 }
 
 pub fn create_table(conn: &mut SqliteConnection) {
-    match sql_query(
-        "CREATE TABLE IF NOT EXISTS version_history (
+    const sql_stmt: &str = "CREATE TABLE IF NOT EXISTS version_history (
 id INTEGER PRIMARY KEY AUTOINCREMENT,
 project_name TEXT,
 channel TEXT,
@@ -51,8 +50,8 @@ version TEXT,
 bump_date TIMESTAMP,
 url TEXT,
 UNIQUE (project_name, channel, version)
-)",
-    ).execute(conn) {
+)";
+    match sql_query(sql_stmt).execute(conn) {
         Ok(_) => {}
         Err(e) => error!("create table error. {:?}", e),
     };
