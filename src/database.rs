@@ -1,5 +1,6 @@
 use chrono::NaiveDateTime;
 use diesel::insert_or_ignore_into;
+use diesel::dsl::sql_query;
 use diesel::prelude::*;
 
 mod schema {
@@ -40,8 +41,8 @@ pub fn get_database_connection(url: &str) -> SqliteConnection {
     SqliteConnection::establish(url).unwrap()
 }
 
-pub fn create_table(conn: &SqliteConnection) {
-    match conn.execute(
+pub fn create_table(conn: &mut SqliteConnection) {
+    match sql_query(
         "CREATE TABLE IF NOT EXISTS version_history (
 id INTEGER PRIMARY KEY AUTOINCREMENT,
 project_name TEXT,
@@ -51,14 +52,14 @@ bump_date TIMESTAMP,
 url TEXT,
 UNIQUE (project_name, channel, version)
 )",
-    ) {
+    ).execute(conn) {
         Ok(_) => {}
         Err(e) => error!("create table error. {:?}", e),
     };
 }
 
 #[allow(dead_code)]
-pub fn have_version_history(conn: &SqliteConnection, i_name: &str, i_channel: &str, i_version: &str) -> bool {
+pub fn have_version_history(conn: &mut SqliteConnection, i_name: &str, i_channel: &str, i_version: &str) -> bool {
     use self::schema::version_history::dsl::*;
 
     match version_history
@@ -74,7 +75,7 @@ pub fn have_version_history(conn: &SqliteConnection, i_name: &str, i_channel: &s
     }
 }
 
-pub fn insert_version_history(conn: &SqliteConnection, input: &VersionHistory) -> QueryResult<usize> {
+pub fn insert_version_history(conn: &mut SqliteConnection, input: &VersionHistory) -> QueryResult<usize> {
     use self::schema::version_history::dsl::*;
 
     insert_or_ignore_into(version_history)
@@ -89,7 +90,7 @@ pub fn insert_version_history(conn: &SqliteConnection, input: &VersionHistory) -
 }
 
 pub fn get_latest_version_history(
-    conn: &SqliteConnection,
+    conn: &mut SqliteConnection,
     order_by: Option<String>,
     is_order_by_desc: bool,
 ) -> Vec<VersionHistory> {
@@ -134,7 +135,7 @@ pub fn get_latest_version_history(
     ret
 }
 
-pub fn get_version_history(conn: &SqliteConnection) -> Vec<VersionHistory> {
+pub fn get_version_history(conn: &mut SqliteConnection) -> Vec<VersionHistory> {
     use self::schema::version_history::dsl::*;
 
     //version_history
