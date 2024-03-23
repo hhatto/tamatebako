@@ -7,71 +7,68 @@ extern crate diesel;
 #[macro_use]
 extern crate lazy_static;
 #[macro_use]
-extern crate clap;
-#[macro_use]
 extern crate serde_derive;
 
+use clap::{Parser, Subcommand, ValueEnum};
 use std::path::PathBuf;
 use std::{env, fs};
-use structopt::StructOpt;
 
 mod collector;
 mod config;
 mod database;
 mod web;
 
-#[derive(Debug, StructOpt)]
-#[structopt(name = "tamatebako", about = "version checker for OSS Projects")]
-struct CommandOption {
-    #[structopt(long = "log-level", help = "logging level", default_value = "info")]
+#[derive(Parser)]
+#[command(
+    name = env!("CARGO_PKG_NAME"),
+    version = env!("CARGO_PKG_VERSION"),
+    about = env!("CARGO_PKG_DESCRIPTION"),
+    arg_required_else_help = true,
+)]
+struct Cli {
+    #[arg(long, help = "logging level", default_value = "info")]
     log_level: String,
-    #[structopt(short = "c", long = "config", help = "config file", parse(from_os_str))]
+    #[arg(short, long = "config", help = "config file")]
     config_file: Option<PathBuf>,
-    #[structopt(subcommand)]
-    cmd: Command,
+    #[command(subcommand)]
+    cmd: SubCommand,
 }
 
-#[derive(Debug, StructOpt)]
-enum Command {
+#[derive(Subcommand)]
+enum SubCommand {
     /// check and store version history information
-    #[structopt(name = "check")]
     Check {},
 
     /// output the latest version of each projects
-    #[structopt(name = "list")]
     List {
-        #[structopt(short = "s", long = "sort", help = "sort key",
-                    possible_values = &ListSortKey::variants(), case_insensitive = true)]
+        #[arg(short = 's', long = "sort", help = "sort key", value_enum)]
         sort_key: Option<ListSortKey>,
-        #[structopt(short = "r", long = "reverse", help = "reverse the order of the sort item")]
+        #[arg(short = 'r', long = "reverse", help = "reverse the order of the sort item")]
         reverse: bool,
     },
 
     /// serve version history visualize web application
-    #[structopt(name = "web")]
     Web {},
 }
 
-arg_enum! {
-    #[derive(Debug)]
-    enum ListSortKey {
-        Name,
-        Version,
-        DateTime,
-    }
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
+enum ListSortKey {
+    Name,
+    Version,
+    DateTime,
 }
 
 #[tokio::main]
 async fn main() -> Result<(), reqwest::Error> {
-    let opts = CommandOption::from_args();
-    match opts.log_level.as_str() {
+    let cli = Cli::parse();
+    match cli.log_level.as_str() {
         "debug" | "info" | "warn" | "error" => {}
         _ => {
             println!("invalid log-level");
             return Ok(());
         }
     }
-    let env = env_logger::Env::default().filter_or(env_logger::DEFAULT_FILTER_ENV, opts.log_level);
+    let env = env_logger::Env::default().filter_or(env_logger::DEFAULT_FILTER_ENV, cli.log_level);
     env_logger::Builder::from_env(env).init();
 
     let default_config_path = config::default_config_path();
@@ -82,7 +79,7 @@ async fn main() -> Result<(), reqwest::Error> {
             .expect("fail to get default config filename")
             .to_string()
     } else {
-        match opts.config_file {
+        match cli.config_file {
             Some(c) => c.to_str().expect("fail to get config filename").to_string(),
             None => {
                 error!("not exists default config file: {:?}", default_config_path);
@@ -107,11 +104,11 @@ async fn main() -> Result<(), reqwest::Error> {
     let mut dbconn = database::get_database_connection(db_url.as_str());
     database::create_table(&mut dbconn);
 
-    match opts.cmd {
-        Command::Web {} => {
+    match cli.cmd {
+        SubCommand::Web {} => {
             web::serve();
         }
-        Command::List { sort_key, reverse } => {
+        SubCommand::List { sort_key, reverse } => {
             let order_by = match sort_key {
                 Some(ListSortKey::Name) => "project_name",
                 Some(ListSortKey::Version) => "version",
@@ -136,7 +133,7 @@ async fn main() -> Result<(), reqwest::Error> {
                 );
             }
         }
-        Command::Check {} => {
+        SubCommand::Check {} => {
             for (project_name, project) in &config.projects {
                 debug!("config.project: {:?}", project);
 
