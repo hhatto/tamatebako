@@ -15,7 +15,7 @@ git2 = "0.18"
 regex = "1"
 lazy_static = "1.1.0"
 log = "0.4.0"
-env_logger = "0.7"
+env_logger = "0.11"
 diesel = { version = "2.1", features = ["sqlite", "chrono"] }
 chrono = "0.4"
 csv = "1"
