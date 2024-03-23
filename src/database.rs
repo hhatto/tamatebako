@@ -82,7 +82,7 @@ pub fn insert_version_history(conn: &mut SqliteConnection, input: &VersionHistor
             project_name.eq(input.project_name.clone()),
             channel.eq(input.channel.clone()),
             version.eq(input.version.clone()),
-            bump_date.eq(input.bump_date.clone()),
+            bump_date.eq(input.bump_date),
             url.eq(input.url.clone()),
         ))
         .execute(conn)

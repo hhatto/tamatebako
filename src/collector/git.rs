@@ -78,14 +78,11 @@ impl GitCollector {
         let git_directory = match RE_GIT_DIR.captures(clone_url) {
             Some(caps) => {
                 let directory = caps.get(2).unwrap();
-                format!("{}/{}", rootdir, directory.as_str().replace(":", "/"))
+                format!("{}/{}", rootdir, directory.as_str().replace(':', "/"))
             }
             None => "".to_string(),
         };
-        let re_version = match version_regex {
-            Some(s) => Some(Regex::new(s.as_str()).unwrap()),
-            None => None,
-        };
+        let re_version = version_regex.as_ref().map(|s| Regex::new(s.as_str()).unwrap());
 
         Self {
             db_url: db_url.to_string(),
@@ -127,7 +124,7 @@ impl GitCollector {
         debug!("repo: {}, branch: {}", self.url, git_branch);
         let _proc = Command::new("git")
             .arg("checkout")
-            .arg(git_branch.to_string())
+            .arg(git_branch)
             .output()
             .expect("fail git checkout command");
 
@@ -141,8 +138,8 @@ impl GitCollector {
         // pull
         let _proc = Command::new("git").arg("pull").output().expect("fail git pull command");
 
-        if env::set_current_dir(&old_curdir).is_err() {
-            return;
+        if env::set_current_dir(old_curdir).is_err() {
+            error!("fail to set current dir")
         }
     }
 
@@ -156,7 +153,7 @@ impl GitCollector {
 
         let mut git_proc = Command::new("git")
             .arg("log")
-            .arg("-n 300")
+            .arg("-n300")
             .arg("--oneline")
             .arg("--date=format:%Y/%m/%d %H:%M:%S")
             .arg("--pretty=format:%D %s\t%cd\t%H")
@@ -182,7 +179,7 @@ impl GitCollector {
                     Some(vregex) => {
                         if vregex.is_match(l.as_str()) {
                             s.push_str(l.as_str());
-                            s.push_str("\n");
+                            s.push('\n');
                         }
                     }
                     None => {}
@@ -242,10 +239,10 @@ impl GitCollector {
             }
         }
 
-        if env::set_current_dir(&old_curdir).is_err() {
+        if env::set_current_dir(old_curdir).is_err() {
             error!("change dir error");
         }
 
-        return found_new_version_num;
+        found_new_version_num
     }
 }

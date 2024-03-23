@@ -156,9 +156,9 @@ async fn main() -> Result<(), reqwest::Error> {
                     };
                     let mut git_collector = collector::git::GitCollector::new(
                         &db_url,
-                        &config.rootdir.to_str().unwrap(),
+                        config.rootdir.to_str().unwrap(),
                         &git,
-                        &project_name,
+                        project_name,
                         &project.url,
                         &branch,
                         &project.version_regex,
@@ -177,7 +177,7 @@ async fn main() -> Result<(), reqwest::Error> {
                     let repo = tmp[1];
                     let github_collector = collector::github::GitHubCollector::new(
                         &db_url,
-                        &project_name,
+                        project_name,
                         owner,
                         repo,
                         config.github_access_token.clone(),
