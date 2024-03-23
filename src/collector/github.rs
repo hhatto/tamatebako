@@ -57,7 +57,7 @@ impl GitHubCollector {
             Err(e) => {
                 error!("insert error: {:?}", e);
                 0
-            },
+            }
         }
     }
 
@@ -73,13 +73,19 @@ impl GitHubCollector {
                 self.client
                     .get(get_url.as_str())
                     .header("user-agent", "tamatebako-client")
-                    .send().await?.json().await?
+                    .send()
+                    .await?
+                    .json()
+                    .await?
             }
             None => {
                 self.client
                     .get(get_url.as_str())
                     .header("user-agent", "tamatebako-client")
-                    .send().await?.json().await?
+                    .send()
+                    .await?
+                    .json()
+                    .await?
             }
         };
 
@@ -92,7 +98,6 @@ impl GitHubCollector {
 
             let insert_num = self.insert(tag_name, bump_date, release_url);
             all_insert_num += insert_num;
-
         }
         Ok(all_insert_num)
     }

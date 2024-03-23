@@ -118,7 +118,8 @@ async fn main() -> Result<(), reqwest::Error> {
                 Some(ListSortKey::DateTime) => "bump_date",
                 _ => "project_name",
             };
-            let version_histories = database::get_latest_version_history(&mut dbconn, Some(order_by.to_string()), reverse);
+            let version_histories =
+                database::get_latest_version_history(&mut dbconn, Some(order_by.to_string()), reverse);
             let mut name_max_len = 0;
             for version_history in &version_histories {
                 if name_max_len < version_history.project_name.len() {
@@ -182,10 +183,8 @@ async fn main() -> Result<(), reqwest::Error> {
                         config.github_access_token.clone(),
                     );
                     match github_collector.get_releases().await {
-                        Ok(n) => {
-                            new_release_versions = n
-                        }
-                        Err(e) => error!("github collector error: {:#?}", e)
+                        Ok(n) => new_release_versions = n,
+                        Err(e) => error!("github collector error: {:#?}", e),
                     }
                 }
 

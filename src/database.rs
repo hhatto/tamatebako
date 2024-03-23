@@ -1,6 +1,6 @@
 use chrono::NaiveDateTime;
-use diesel::insert_or_ignore_into;
 use diesel::dsl::sql_query;
+use diesel::insert_or_ignore_into;
 use diesel::prelude::*;
 
 mod schema {
