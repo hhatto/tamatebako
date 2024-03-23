@@ -52,11 +52,11 @@ impl GitHubCollector {
                 if n != 0 {
                     info!("insert data. {:?}", version_history);
                 }
-                return n;
+                n
             }
             Err(e) => {
                 error!("insert error: {:?}", e);
-                return 0;
+                0
             },
         }
     }
