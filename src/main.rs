@@ -87,7 +87,7 @@ async fn main() -> Result<(), reqwest::Error> {
             None => {
                 error!("not exists default config file: {:?}", default_config_path);
                 error!("config file is not exists");
-                error!("execute with -config option or set config file to default path");
+                error!("execute with -c/--config option or set config file to default path");
                 return Ok(());
             }
         }
