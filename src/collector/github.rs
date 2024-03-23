@@ -36,7 +36,7 @@ impl GitHubCollector {
     }
 
     fn insert(&self, tag: &str, date: &str, release_url: &str) -> usize {
-        let dbconn = database::get_database_connection(self.db_url.as_str());
+        let mut dbconn = database::get_database_connection(self.db_url.as_str());
         let bump_date = NaiveDateTime::parse_from_str(date, "%Y-%m-%dT%H:%M:%SZ").expect("fail parse date");
         let version_history = database::VersionHistory {
             id: 0,
@@ -47,16 +47,16 @@ impl GitHubCollector {
             url: Some(release_url.to_string()),
         };
 
-        match database::insert_version_history(&dbconn, &version_history) {
+        match database::insert_version_history(&mut dbconn, &version_history) {
             Ok(n) => {
                 if n != 0 {
                     info!("insert data. {:?}", version_history);
                 }
-                return n;
+                n
             }
             Err(e) => {
                 error!("insert error: {:?}", e);
-                return 0;
+                0
             },
         }
     }

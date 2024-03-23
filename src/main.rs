@@ -104,8 +104,8 @@ async fn main() -> Result<(), reqwest::Error> {
     }
 
     let db_url = config.get_database_url();
-    let dbconn = database::get_database_connection(db_url.as_str());
-    database::create_table(&dbconn);
+    let mut dbconn = database::get_database_connection(db_url.as_str());
+    database::create_table(&mut dbconn);
 
     match opts.cmd {
         Command::Web {} => {
@@ -118,7 +118,7 @@ async fn main() -> Result<(), reqwest::Error> {
                 Some(ListSortKey::DateTime) => "bump_date",
                 _ => "project_name",
             };
-            let version_histories = database::get_latest_version_history(&dbconn, Some(order_by.to_string()), reverse);
+            let version_histories = database::get_latest_version_history(&mut dbconn, Some(order_by.to_string()), reverse);
             let mut name_max_len = 0;
             for version_history in &version_histories {
                 if name_max_len < version_history.project_name.len() {
