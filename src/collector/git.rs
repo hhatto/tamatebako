@@ -153,7 +153,7 @@ impl GitCollector {
         if env::set_current_dir(&self.directory).is_err() {
             return 0;
         }
-        let dbconn = database::get_database_connection(self.db_url.as_str());
+        let mut dbconn = database::get_database_connection(self.db_url.as_str());
 
         let mut git_proc = Command::new("git")
             .arg("log")
@@ -232,7 +232,7 @@ impl GitCollector {
                 url: Some(format!("{}/releases/tag/{}", self.url, record.tag)),
             };
 
-            match database::insert_version_history(&dbconn, &version_history) {
+            match database::insert_version_history(&mut dbconn, &version_history) {
                 Ok(n) => {
                     if n != 0 {
                         info!("insert data. {:?}", version_history);
