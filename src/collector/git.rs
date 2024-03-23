@@ -1,6 +1,4 @@
 use chrono::NaiveDateTime;
-use csv;
-use git2;
 use git2::build::RepoBuilder;
 use git2::{Cred, FetchOptions, RemoteCallbacks, Repository};
 use regex::Regex;
@@ -21,7 +19,8 @@ lazy_static! {
 struct GitInfo {
     tag: String,
     date: String,
-    hash: String,
+    #[allow(dead_code)]
+    hash: String,  // not use now
 }
 
 #[derive(Debug, Default)]

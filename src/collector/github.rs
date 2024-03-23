@@ -1,5 +1,4 @@
 use chrono::NaiveDateTime;
-use reqwest;
 use reqwest::Client;
 use url::Url;
 

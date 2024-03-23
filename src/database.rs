@@ -19,7 +19,7 @@ mod schema {
 use self::schema::version_history;
 
 #[derive(Deserialize, Insertable, QueryableByName)]
-#[table_name = "version_history"]
+#[diesel(table_name = version_history)]
 pub struct VersionHistoryForm {
     project_name: String,
     channel: String,
@@ -42,7 +42,7 @@ pub fn get_database_connection(url: &str) -> SqliteConnection {
 }
 
 pub fn create_table(conn: &mut SqliteConnection) {
-    const sql_stmt: &str = "CREATE TABLE IF NOT EXISTS version_history (
+    const SQL_STMT: &str = "CREATE TABLE IF NOT EXISTS version_history (
 id INTEGER PRIMARY KEY AUTOINCREMENT,
 project_name TEXT,
 channel TEXT,
@@ -51,7 +51,7 @@ bump_date TIMESTAMP,
 url TEXT,
 UNIQUE (project_name, channel, version)
 )";
-    match sql_query(sql_stmt).execute(conn) {
+    match sql_query(SQL_STMT).execute(conn) {
         Ok(_) => {}
         Err(e) => error!("create table error. {:?}", e),
     };
@@ -134,6 +134,7 @@ pub fn get_latest_version_history(
     ret
 }
 
+#[allow(dead_code)]
 pub fn get_version_history(conn: &mut SqliteConnection) -> Vec<VersionHistory> {
     use self::schema::version_history::dsl::*;
 
